@@ -1,0 +1,17 @@
+node_modules
+dist
+.env
+.env.*
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+vite-dev*.log
+
+# Local source copies; public/images contains the app assets.
+/aiguille.png
+/carreTissus.png
+/jacketPatchwork.jpg
+/jacketPatchwork.png
+/machine.png
