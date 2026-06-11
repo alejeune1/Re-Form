@@ -16,23 +16,29 @@ Upload réel avec preview, formulaire complet et sauvegarde locale temporaire.
 - Formulaire matière complet : nom, type, état, objectif, matière, notes.
 - Sauvegarde temporaire dans `localStorage`.
 - Liste des dernières matières sauvegardées localement.
+- Validation front : formats JPG/PNG/WebP, limite 2 Mo, champs bornés.
 
 ## Phase 4
-Connexion backend Supabase :
-- utilisateurs
-- tutoriels
-- créations
-- images uploadées
-- défis
-- votes
+Connexion backend Supabase.
+- Client Supabase typé côté front.
+- Variables d’environnement documentées.
+- Lecture Supabase des tutoriels et défis avec fallback mock.
+- Préparation upload Supabase Storage des créations avec fallback local.
+- Schéma SQL avec tables `profiles`, `tutorials`, `creations`, `challenges`, `votes`.
+- Row Level Security activée sur les tables.
+- Politiques Storage pour limiter les uploads aux utilisateurs authentifiés.
 
 ## Phase 5
 Communauté :
-- profils
-- posts de créations
-- likes
-- commentaires
-- votes
+- page `/communaute`
+- posts de créations avec fallback mock
+- auth email/mot de passe via Supabase
+- profil utilisateur public modifiable
+- publication d’une création dans la communauté depuis l’upload
+- interactions Supabase : likes, commentaires, votes
+- fallback local si l’utilisateur n’est pas connecté
+- tables Supabase `creation_likes` et `creation_comments`
+- politiques RLS pour interactions communautaires
 
 ## Phase 6
 Concours / tournois :

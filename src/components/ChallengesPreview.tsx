@@ -1,8 +1,15 @@
 import { motion } from 'framer-motion';
+import { useCallback, useMemo } from 'react';
 import { challenges } from '../data/challenges';
+import { useRepositoryList } from '../hooks/useRepositoryList';
+import { getChallenges } from '../services/reformRepository';
 import ChallengeCard from './ChallengeCard';
 
 export default function ChallengesPreview() {
+  const initialChallenges = useMemo(() => challenges.slice(0, 4), []);
+  const loadChallenges = useCallback(() => getChallenges(4), []);
+  const { items, isLoading } = useRepositoryList(loadChallenges, initialChallenges);
+
   return (
     <section id="challenges" className="px-4 py-24 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -19,8 +26,8 @@ export default function ChallengesPreview() {
           </h2>
         </motion.div>
 
-        <div className="mt-12 grid gap-4 md:grid-cols-2">
-          {challenges.map((challenge, index) => (
+        <div className="mt-12 grid gap-4 md:grid-cols-2" aria-busy={isLoading}>
+          {items.map((challenge, index) => (
             <ChallengeCard key={challenge.id} challenge={challenge} index={index} compact />
           ))}
         </div>

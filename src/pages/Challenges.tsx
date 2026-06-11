@@ -1,8 +1,14 @@
 import { motion } from 'framer-motion';
+import { useCallback } from 'react';
 import ChallengeCard from '../components/ChallengeCard';
 import { challenges } from '../data/challenges';
+import { useRepositoryList } from '../hooks/useRepositoryList';
+import { getChallenges } from '../services/reformRepository';
 
 export default function Challenges() {
+  const loadChallenges = useCallback(() => getChallenges(), []);
+  const { items, isLoading, source } = useRepositoryList(loadChallenges, challenges);
+
   return (
     <section className="px-4 pb-24 pt-36 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -17,12 +23,17 @@ export default function Challenges() {
             Les futurs concours créatifs RE:FORM.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-textile/74">
-            Des défis mockés pour préparer les prochains tournois : thèmes, statuts, participation et règles à venir.
+            Des défis reliés à Supabase quand la configuration est présente, avec fallback mock pour préserver l’expérience.
           </p>
+          {source === 'supabase' ? (
+            <p className="mt-4 w-fit rounded-full bg-sage/12 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-sage">
+              Données Supabase
+            </p>
+          ) : null}
         </motion.div>
 
-        <div className="mt-12 grid gap-4 md:grid-cols-2">
-          {challenges.map((challenge, index) => (
+        <div className="mt-12 grid gap-4 md:grid-cols-2" aria-busy={isLoading}>
+          {items.map((challenge, index) => (
             <ChallengeCard key={challenge.id} challenge={challenge} index={index} />
           ))}
         </div>

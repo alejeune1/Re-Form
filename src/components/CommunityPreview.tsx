@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 const actions = ['Poster ses créations', 'Voter pour des transformations', 'Participer aux concours', 'Partager des idées'];
 
@@ -18,6 +19,12 @@ export default function CommunityPreview() {
             <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-ink sm:text-6xl">
               Une communauté pour apprendre, transformer et montrer ce que la matière peut devenir.
             </h2>
+            <Link
+              to="/communaute"
+              className="mt-8 inline-flex rounded-full bg-ink px-5 py-3 text-sm font-bold text-cream transition-colors duration-300 hover:bg-sage hover:text-ink"
+            >
+              Voir la communauté
+            </Link>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {actions.map((action) => (

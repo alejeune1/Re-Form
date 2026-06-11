@@ -5,7 +5,7 @@ const navItems = [
   { label: 'Concept', to: '/#concept', type: 'anchor' },
   { label: 'Tutoriels', to: '/tutoriels', type: 'route' },
   { label: 'Défis', to: '/defis', type: 'route' },
-  { label: 'Communauté', to: '/#community', type: 'anchor' },
+  { label: 'Communauté', to: '/communaute', type: 'route' },
 ];
 
 export default function Header() {
@@ -27,18 +27,12 @@ export default function Header() {
               <NavLink
                 key={item.label}
                 to={item.to}
-                className={({ isActive }) =>
-                  `transition-colors duration-300 hover:text-ink ${isActive ? 'text-ink' : ''}`
-                }
+                className={({ isActive }) => `transition-colors duration-300 hover:text-ink ${isActive ? 'text-ink' : ''}`}
               >
                 {item.label}
               </NavLink>
             ) : (
-              <Link
-                key={item.label}
-                to={item.to}
-                className="transition-colors duration-300 hover:text-ink"
-              >
+              <Link key={item.label} to={item.to} className="transition-colors duration-300 hover:text-ink">
                 {item.label}
               </Link>
             ),

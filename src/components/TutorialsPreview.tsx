@@ -1,9 +1,16 @@
 import { motion } from 'framer-motion';
+import { useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { tutorials } from '../data/tutorials';
+import { useRepositoryList } from '../hooks/useRepositoryList';
+import { getTutorials } from '../services/reformRepository';
 import TutorialCard from './TutorialCard';
 
 export default function TutorialsPreview() {
+  const initialTutorials = useMemo(() => tutorials.slice(0, 4), []);
+  const loadTutorials = useCallback(() => getTutorials(4), []);
+  const { items, isLoading } = useRepositoryList(loadTutorials, initialTutorials);
+
   return (
     <section id="tutorials" className="px-4 py-24 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -27,8 +34,8 @@ export default function TutorialsPreview() {
           </Link>
         </div>
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {tutorials.map((tutorial, index) => (
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-busy={isLoading}>
+          {items.map((tutorial, index) => (
             <TutorialCard key={tutorial.id} tutorial={tutorial} index={index} compact />
           ))}
         </div>

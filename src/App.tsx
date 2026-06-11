@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import Footer from './components/Footer';
 import Header from './components/Header';
 import Challenges from './pages/Challenges';
+import Community from './pages/Community';
 import Home from './pages/Home';
 import Tutorials from './pages/Tutorials';
 
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/tutoriels" element={<Tutorials />} />
           <Route path="/defis" element={<Challenges />} />
+          <Route path="/communaute" element={<Community />} />
           <Route path="*" element={<Home />} />
         </Routes>
         <Footer />
