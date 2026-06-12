@@ -1,5 +1,6 @@
 import { challenges as fallbackChallenges, type Challenge } from '../data/challenges';
 import { communityPosts as fallbackCommunityPosts, type CommunityComment, type CommunityPost } from '../data/community';
+import { contests as fallbackContests, type Contest, type ContestSubmission } from '../data/contests';
 import { tutorials as fallbackTutorials, type Tutorial } from '../data/tutorials';
 import type { Database } from '../lib/database.types';
 import { supabase } from '../lib/supabase';
@@ -13,6 +14,8 @@ type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 type LikeRow = Database['public']['Tables']['creation_likes']['Row'];
 type CommentRow = Database['public']['Tables']['creation_comments']['Row'];
 type VoteRow = Database['public']['Tables']['votes']['Row'];
+type ChallengeRegistrationRow = Database['public']['Tables']['challenge_registrations']['Row'];
+type ChallengeSubmissionRow = Database['public']['Tables']['challenge_submissions']['Row'];
 
 export type RepositoryResult<T> = {
   items: T[];
@@ -35,6 +38,13 @@ export type MaterialCreationInput = {
 export type SaveCreationResult =
   | { mode: 'local'; reason: 'not-configured' | 'not-authenticated' | 'remote-error'; error?: string }
   | { mode: 'supabase'; creationId: string };
+
+export type UserCreationOption = {
+  id: string;
+  title: string;
+  material: string;
+  createdAt: string;
+};
 
 type CommunityMeta = {
   profilesById: Map<string, ProfileRow>;
@@ -70,6 +80,18 @@ function mapChallenge(row: ChallengeRow): Challenge {
     participants: row.participants,
     description: row.description,
   };
+}
+
+function normalizeContestStatus(status: string): Contest['status'] {
+  if (status === 'En cours') {
+    return 'En cours';
+  }
+
+  if (status.toLowerCase().includes('termin')) {
+    return 'Terminé';
+  }
+
+  return 'Bientôt';
 }
 
 function getImageVariant(material: string): CommunityPost['imageVariant'] {
@@ -173,6 +195,48 @@ function countByCreationId(rows: Array<Pick<LikeRow | CommentRow | VoteRow, 'cre
     counts.set(row.creation_id, (counts.get(row.creation_id) ?? 0) + 1);
     return counts;
   }, new Map());
+}
+
+function countRegistrations(rows: ChallengeRegistrationRow[]) {
+  return rows.reduce<Map<string, number>>((counts, row) => {
+    counts.set(row.challenge_id, (counts.get(row.challenge_id) ?? 0) + 1);
+    return counts;
+  }, new Map());
+}
+
+function countVotesByChallengeCreation(rows: VoteRow[]) {
+  return rows.reduce<Map<string, number>>((counts, row) => {
+    const key = `${row.challenge_id}:${row.creation_id}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+    return counts;
+  }, new Map());
+}
+
+function mapContestSubmission(
+  submission: ChallengeSubmissionRow,
+  creation: CreationRow | undefined,
+  profile: ProfileRow | undefined,
+  voteCounts: Map<string, number>,
+  viewerId?: string,
+  votes: VoteRow[] = [],
+): ContestSubmission | null {
+  if (!creation) {
+    return null;
+  }
+
+  const voteKey = `${submission.challenge_id}:${submission.creation_id}`;
+
+  return {
+    id: submission.id,
+    creationId: submission.creation_id,
+    title: creation.title,
+    authorName: profile?.display_name || 'Membre RE:FORM',
+    material: creation.material,
+    technique: creation.goal,
+    votes: voteCounts.get(voteKey) ?? 0,
+    viewerHasVoted: Boolean(viewerId && votes.some((vote) => vote.voter_id === viewerId && vote.challenge_id === submission.challenge_id && vote.creation_id === submission.creation_id)),
+    createdAt: submission.created_at,
+  };
 }
 
 function groupComments(rows: CommentRow[], profilesById: Map<string, ProfileRow>) {
@@ -290,6 +354,194 @@ export async function getChallenges(limit?: number): Promise<RepositoryResult<Ch
   }
 
   return { items: data.map(mapChallenge), source: 'supabase' };
+}
+
+export async function getContests(viewerId?: string): Promise<RepositoryResult<Contest>> {
+  if (!supabase) {
+    return { items: fallbackContests, source: 'mock' };
+  }
+
+  const { data: challenges, error: challengesError } = await supabase
+    .from('challenges')
+    .select('id,title,theme,status,participants,description,is_published,starts_at,ends_at,created_at')
+    .eq('is_published', true)
+    .order('created_at', { ascending: false });
+
+  if (challengesError || !challenges || challenges.length === 0) {
+    return { items: fallbackContests, source: 'mock', error: challengesError?.message };
+  }
+
+  const challengeIds = challenges.map((challenge) => challenge.id);
+  const [registrationsResult, submissionsResult, votesResult] = await Promise.all([
+    supabase.from('challenge_registrations').select('id,challenge_id,user_id,created_at').in('challenge_id', challengeIds),
+    supabase.from('challenge_submissions').select('id,challenge_id,creation_id,user_id,statement,created_at').in('challenge_id', challengeIds),
+    supabase.from('votes').select('id,challenge_id,creation_id,voter_id,created_at').in('challenge_id', challengeIds),
+  ]);
+
+  const registrations = registrationsResult.data ?? [];
+  const submissions = submissionsResult.data ?? [];
+  const votes = votesResult.data ?? [];
+  const creationIds = Array.from(new Set(submissions.map((submission) => submission.creation_id)));
+  const submitterIds = Array.from(new Set(submissions.map((submission) => submission.user_id)));
+
+  const [creationsResult, profilesResult] = await Promise.all([
+    creationIds.length > 0
+      ? supabase.from('creations').select('id,owner_id,title,piece_type,condition,goal,material,notes,image_name,image_path,visibility,created_at').in('id', creationIds)
+      : { data: [] as CreationRow[] },
+    submitterIds.length > 0
+      ? supabase.from('profiles').select('id,display_name,avatar_url,created_at,updated_at').in('id', submitterIds)
+      : { data: [] as ProfileRow[] },
+  ]);
+
+  const creationsById = (creationsResult.data ?? []).reduce<Map<string, CreationRow>>((creationMap, creation) => {
+    creationMap.set(creation.id, creation);
+    return creationMap;
+  }, new Map());
+  const profilesById = (profilesResult.data ?? []).reduce<Map<string, ProfileRow>>((profileMap, profile) => {
+    profileMap.set(profile.id, profile);
+    return profileMap;
+  }, new Map());
+  const registrationCounts = countRegistrations(registrations);
+  const voteCounts = countVotesByChallengeCreation(votes);
+  const viewerRegisteredChallengeIds = new Set(viewerId ? registrations.filter((registration) => registration.user_id === viewerId).map((registration) => registration.challenge_id) : []);
+
+  const contests = challenges.map<Contest>((challenge) => {
+    const challengeSubmissions = submissions
+      .filter((submission) => submission.challenge_id === challenge.id)
+      .map((submission) =>
+        mapContestSubmission(submission, creationsById.get(submission.creation_id), profilesById.get(submission.user_id), voteCounts, viewerId, votes),
+      )
+      .filter((submission): submission is ContestSubmission => Boolean(submission))
+      .sort((left, right) => right.votes - left.votes);
+
+    return {
+      id: challenge.id,
+      title: challenge.title,
+      theme: challenge.theme,
+      status: normalizeContestStatus(String(challenge.status)),
+      description: challenge.description,
+      participants: Math.max(challenge.participants, registrationCounts.get(challenge.id) ?? 0),
+      startsAt: challenge.starts_at,
+      endsAt: challenge.ends_at,
+      viewerRegistered: viewerRegisteredChallengeIds.has(challenge.id),
+      submissions: challengeSubmissions,
+    };
+  });
+
+  return { items: contests, source: 'supabase' };
+}
+
+export async function getUserPublicCreations(): Promise<UserCreationOption[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('creations')
+    .select('id,title,material,created_at')
+    .eq('owner_id', user.id)
+    .eq('visibility', 'public')
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) {
+    return [];
+  }
+
+  return data.map((creation) => ({
+    id: creation.id,
+    title: creation.title,
+    material: creation.material,
+    createdAt: creation.created_at,
+  }));
+}
+
+export async function toggleContestRegistration(challengeId: string, shouldRegister: boolean) {
+  if (!supabase) {
+    return { ok: false, reason: 'not-configured' as const };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, reason: 'not-authenticated' as const };
+  }
+
+  const { error } = shouldRegister
+    ? await supabase.from('challenge_registrations').upsert(
+        {
+          challenge_id: challengeId,
+          user_id: user.id,
+        },
+        { onConflict: 'challenge_id,user_id', ignoreDuplicates: true },
+      )
+    : await supabase.from('challenge_registrations').delete().match({ challenge_id: challengeId, user_id: user.id });
+
+  return error ? { ok: false, reason: 'remote-error' as const, error: error.message } : { ok: true };
+}
+
+export async function submitCreationToContest(challengeId: string, creationId: string, statement: string) {
+  if (!supabase) {
+    return { ok: false, reason: 'not-configured' as const };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, reason: 'not-authenticated' as const };
+  }
+
+  const safeStatement = statement.trim().slice(0, 500);
+  const { error } = await supabase.from('challenge_submissions').upsert(
+    {
+      challenge_id: challengeId,
+      creation_id: creationId,
+      user_id: user.id,
+      statement: safeStatement,
+    },
+    { onConflict: 'challenge_id,creation_id', ignoreDuplicates: true },
+  );
+
+  return error ? { ok: false, reason: 'remote-error' as const, error: error.message } : { ok: true };
+}
+
+export async function toggleContestVote(challengeId: string, creationId: string, shouldVote: boolean) {
+  if (!supabase) {
+    return { ok: false, reason: 'not-configured' as const };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, reason: 'not-authenticated' as const };
+  }
+
+  const { error } = shouldVote
+    ? await supabase.from('votes').upsert(
+        {
+          challenge_id: challengeId,
+          creation_id: creationId,
+          voter_id: user.id,
+        },
+        { onConflict: 'challenge_id,creation_id,voter_id', ignoreDuplicates: true },
+      )
+    : await supabase.from('votes').delete().match({ challenge_id: challengeId, creation_id: creationId, voter_id: user.id });
+
+  return error ? { ok: false, reason: 'remote-error' as const, error: error.message } : { ok: true };
 }
 
 export async function getCommunityPosts(viewerId?: string, limit?: number): Promise<RepositoryResult<CommunityPost>> {

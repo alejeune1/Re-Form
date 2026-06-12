@@ -4,7 +4,9 @@ import Footer from './components/Footer';
 import Header from './components/Header';
 import Challenges from './pages/Challenges';
 import Community from './pages/Community';
+import Contests from './pages/Contests';
 import Home from './pages/Home';
+import TransformationAssistant from './pages/TransformationAssistant';
 import Tutorials from './pages/Tutorials';
 
 function ScrollToLocation() {
@@ -36,6 +38,8 @@ export default function App() {
           <Route path="/tutoriels" element={<Tutorials />} />
           <Route path="/defis" element={<Challenges />} />
           <Route path="/communaute" element={<Community />} />
+          <Route path="/concours" element={<Contests />} />
+          <Route path="/assistant" element={<TransformationAssistant />} />
           <Route path="*" element={<Home />} />
         </Routes>
         <Footer />

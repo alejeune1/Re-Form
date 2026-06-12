@@ -42,15 +42,21 @@ Communauté :
 
 ## Phase 6
 Concours / tournois :
-- inscription
-- soumission de création
-- vote communautaire
-- classement
-- archive des anciens défis
+- page `/concours`
+- inscription Supabase aux concours publiés
+- soumission d’une création publique à un concours
+- vote communautaire sur les soumissions
+- classement par concours
+- archive des anciens concours
+- tables Supabase `challenge_registrations` et `challenge_submissions`
+- politiques RLS pour inscriptions et soumissions
 
 ## Phase 7
 Assistant de transformation :
-- upload photo textile
-- analyse manuelle ou IA plus tard
-- suggestions de transformations
-- tutoriels recommandés
+- page `/assistant`
+- upload photo textile local avec validation JPG/PNG/WebP et limite 2 Mo
+- analyse manuelle guidée par matière, état, objectif, niveau et temps disponible
+- suggestions de transformations explicables par règles éditoriales
+- tutoriels recommandés selon la piste retenue
+- historique local minimal sans stocker l’image
+- aucune image envoyée à un serveur, IA prévue plus tard

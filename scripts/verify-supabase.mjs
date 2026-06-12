@@ -1,6 +1,16 @@
 import { readFileSync } from 'node:fs';
 
-const REQUIRED_TABLES = ['profiles', 'tutorials', 'challenges', 'creations', 'votes', 'creation_likes', 'creation_comments'];
+const REQUIRED_TABLES = [
+  'profiles',
+  'tutorials',
+  'challenges',
+  'creations',
+  'votes',
+  'creation_likes',
+  'creation_comments',
+  'challenge_registrations',
+  'challenge_submissions',
+];
 const PUBLIC_CONTENT_CHECKS = [
   { table: 'tutorials', label: 'published tutorials', query: 'select=id&is_published=eq.true&limit=1' },
   { table: 'challenges', label: 'published challenges', query: 'select=id&is_published=eq.true&limit=1' },

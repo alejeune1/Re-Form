@@ -6,6 +6,8 @@ const navItems = [
   { label: 'Tutoriels', to: '/tutoriels', type: 'route' },
   { label: 'Défis', to: '/defis', type: 'route' },
   { label: 'Communauté', to: '/communaute', type: 'route' },
+  { label: 'Concours', to: '/concours', type: 'route' },
+  { label: 'Assistant', to: '/assistant', type: 'route' },
 ];
 
 export default function Header() {
@@ -21,7 +23,7 @@ export default function Header() {
           RE<span className="text-sage">:</span>FORM
         </Link>
 
-        <nav className="hidden items-center gap-8 text-sm text-textile/75 md:flex">
+        <nav className="hidden items-center gap-4 text-sm text-textile/75 md:flex lg:gap-6">
           {navItems.map((item) =>
             item.type === 'route' ? (
               <NavLink

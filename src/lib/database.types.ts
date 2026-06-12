@@ -258,6 +258,79 @@ export type Database = {
           },
         ];
       };
+      challenge_registrations: {
+        Row: {
+          id: string;
+          challenge_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          challenge_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: 'challenge_registrations_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'challenges';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'challenge_registrations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      challenge_submissions: {
+        Row: {
+          id: string;
+          challenge_id: string;
+          creation_id: string;
+          user_id: string;
+          statement: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          challenge_id: string;
+          creation_id: string;
+          user_id: string;
+          statement?: string;
+          created_at?: string;
+        };
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: 'challenge_submissions_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'challenges';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'challenge_submissions_creation_id_fkey';
+            columns: ['creation_id'];
+            isOneToOne: false;
+            referencedRelation: 'creations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'challenge_submissions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

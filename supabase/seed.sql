@@ -55,7 +55,7 @@ set
   description = excluded.description,
   is_published = excluded.is_published;
 
-insert into public.challenges (id, title, theme, status, participants, description, is_published)
+insert into public.challenges (id, title, theme, status, participants, description, is_published, starts_at, ends_at)
 values
   (
     'denim-second-life',
@@ -64,7 +64,9 @@ values
     'En cours',
     128,
     'Transformer un jean oublié en vêtement, sac ou objet textile utile.',
-    true
+    true,
+    '2026-06-01T00:00:00+00',
+    '2026-06-30T23:59:59+00'
   ),
   (
     'technical-textile',
@@ -73,7 +75,9 @@ values
     'Bientôt',
     64,
     'Imaginer une pièce à partir de matières résistantes ou imperméables.',
-    true
+    true,
+    '2026-07-01T00:00:00+00',
+    '2026-07-31T23:59:59+00'
   ),
   (
     'visible-repair',
@@ -82,7 +86,9 @@ values
     'En cours',
     213,
     'Faire de la réparation un détail graphique, assumé et désirable.',
-    true
+    true,
+    '2026-05-20T00:00:00+00',
+    '2026-06-20T23:59:59+00'
   ),
   (
     'bag-to-garment',
@@ -91,7 +97,20 @@ values
     'Bientôt',
     47,
     'Réinventer sangles, poches et panneaux pour construire une nouvelle silhouette.',
-    true
+    true,
+    '2026-08-01T00:00:00+00',
+    '2026-08-31T23:59:59+00'
+  ),
+  (
+    'winter-archive',
+    'Archive : manteaux réparés',
+    'Archive concours',
+    'Terminé',
+    89,
+    'Ancien concours autour des vestes et manteaux renforcés pour l’hiver.',
+    true,
+    '2026-01-05T00:00:00+00',
+    '2026-01-31T23:59:59+00'
   )
 on conflict (id) do update
 set
@@ -100,6 +119,8 @@ set
   status = excluded.status,
   participants = excluded.participants,
   description = excluded.description,
-  is_published = excluded.is_published;
+  is_published = excluded.is_published,
+  starts_at = excluded.starts_at,
+  ends_at = excluded.ends_at;
 
 notify pgrst, 'reload schema';
